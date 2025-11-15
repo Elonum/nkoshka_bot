@@ -1,7 +1,6 @@
-package main
+package main // для теста, но в проекте — без main
 
 import (
-	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -80,11 +79,56 @@ func processStateInput(state *UserState, input string, bot *tgbotapi.BotAPI) {
 		msg.ReplyMarkup = StylesInline() // из keyboards.go
 		bot.Send(msg)
 	case "image_desc":
-		// Здесь вызов бэкенда: CallBackend("/generate_image", map[string]string{"desc": input})
-		// Пока заглушка
-		bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Генерирую картинку по: %s", input)))
+		data := map[string]interface{}{
+			"desc": input,
+			"nko":  state.NKO, // передаём данные НКО, если нужно
+		}
+		post, err := CallBackend("/generate_image", data) // из backend.go
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(chatID, "Ошибка генерации: "+err.Error()))
+		} else {
+			SendPostToUser(chatID, post, bot) // из backend.go
+		}
 		ResetUserState(chatID)
-		// ... аналогично для других состояний (edit_text, plan_period и т.д.)
+	case "edit_text":
+		data := map[string]interface{}{
+			"text": input,
+		}
+		post, err := CallBackend("/edit_text", data)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(chatID, "Ошибка: "+err.Error()))
+		} else {
+			// Для редактора: post.MainText — исправленный, ошибки можно в content
+			bot.Send(tgbotapi.NewMessage(chatID, "Исправленный текст: "+post.MainText))
+		}
+		ResetUserState(chatID)
+	case "text_free_input": // пример для свободного текста
+		data := map[string]interface{}{
+			"idea": input,
+			"nko":  state.NKO,
+		}
+		post, err := CallBackend("/generate_text", data)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(chatID, "Ошибка: "+err.Error()))
+		} else {
+			SendPostToUser(chatID, post, bot)
+		}
+		ResetUserState(chatID)
+	case "plan_period":
+		days := input // парси в int, если нужно
+		data := map[string]interface{}{
+			"days": days,
+			"freq": "ежедневно", // или спроси дополнительно
+			"nko":  state.NKO,
+		}
+		post, err := CallBackend("/content_plan", data)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(chatID, "Ошибка: "+err.Error()))
+		} else {
+			bot.Send(tgbotapi.NewMessage(chatID, "Контент-план: "+post.MainText))
+		}
+		ResetUserState(chatID)
+		// Добавь больше case для других состояний (text_struct_step1, etc.)
 	}
 }
 
@@ -110,6 +154,14 @@ func handleCallback(callback *tgbotapi.CallbackQuery, bot *tgbotapi.BotAPI) {
 		state.State = "text_free_input"
 		SaveUserState(state)
 		bot.Send(tgbotapi.NewMessage(chatID, "Введи идею для поста:"))
-		// ... другие callback (style_*, text_struct и т.д.)
+	// Добавь case для "text_struct", "text_example", "style_*"
+	case "style_conversational":
+		state.NKO.Style = "разговорный"
+		SaveUserState(state)
+		msg := tgbotapi.NewMessage(chatID, "Данные сохранены! Выбери функцию:")
+		msg.ReplyMarkup = MainMenu()
+		bot.Send(msg)
+		state.State = "idle" // или ResetUserState(chatID)
+		// Аналогично для других стилей
 	}
 }
