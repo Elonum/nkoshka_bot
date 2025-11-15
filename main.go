@@ -34,11 +34,15 @@ func main() {
 	updates := bot.GetUpdatesChan(u)
 
 	for update := range updates {
-		if update.Message == nil {
-			continue
-		}
+		HandleUpdate(update, bot) // Теперь вся логика в handlers.go
+	}
+}
 
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Привет! Я NKOshka Bot. Используй /start для начала.")
+// HandleUpdate — заглушка, перенесём в handlers.go позже
+func HandleUpdate(update tgbotapi.Update, bot *tgbotapi.BotAPI) {
+	if update.Message != nil {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Привет! Я NKOshka Bot. Выбери действие:")
+		msg.ReplyMarkup = MainMenu() // Используем клавиатуру из keyboards.go
 		bot.Send(msg)
 	}
 }
