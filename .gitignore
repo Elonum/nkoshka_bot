@@ -1,0 +1,17 @@
+# Go
+bin/
+vendor/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Env
+.env
+
+# Logs
+*.log
+
+# Temp
+tmp/
