@@ -15,8 +15,6 @@ func main() {
 		log.Println("No .env file found")
 	}
 
-	InitDB()
-
 	botToken := os.Getenv("BOT_TOKEN")
 	if botToken == "" {
 		log.Panic("BOT_TOKEN not set")

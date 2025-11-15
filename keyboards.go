@@ -14,7 +14,8 @@ func MainMenu() tgbotapi.ReplyKeyboardMarkup {
 			tgbotapi.NewKeyboardButton("Контент-план"),
 		),
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("Настройки НКО"), // для обновления данных
+			tgbotapi.NewKeyboardButton("Настройки НКО"),
+			tgbotapi.NewKeyboardButton("Помощь"),
 		),
 	)
 }

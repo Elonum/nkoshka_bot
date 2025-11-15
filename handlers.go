@@ -32,6 +32,8 @@ func handleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 		msg := tgbotapi.NewMessage(chatID, "Привет! Расскажи о своей НКО для лучших результатов?")
 		msg.ReplyMarkup = YesNoInline() // из keyboards.go
 		bot.Send(msg)
+	case "/help", "Помощь":
+		sendHelpMessage(bot, chatID)
 	case "Генерация текста":
 		msg := tgbotapi.NewMessage(chatID, "Выбери режим генерации текста:")
 		msg.ReplyMarkup = TextModesInline() // из keyboards.go
@@ -164,4 +166,31 @@ func handleCallback(callback *tgbotapi.CallbackQuery, bot *tgbotapi.BotAPI) {
 		state.State = "idle" // или ResetUserState(chatID)
 		// Аналогично для других стилей
 	}
+}
+
+func sendHelpMessage(bot *tgbotapi.BotAPI, chatID int64) {
+	helpText := `NKOshka Bot — твой SMM-менеджер для добрых дел
+
+Что я умею?
+Генерирую посты, картинки и планы — быстро и красиво
+
+Как начать?
+1️⃣ Напиши /start → расскажи о НКО
+2️⃣ Выбери функцию из меню
+
+Функции:
+• Генерация текста — 3 режима
+• Картинка — по описанию
+• Редактор — исправляю ошибки
+• Контент-план — на неделю/месяц
+
+Совет:
+Чем больше расскажешь о НКО — тем точнее посты!
+
+Готов? Нажми кнопку ниже или напиши /start`
+
+	msg := tgbotapi.NewMessage(chatID, helpText)
+	msg.ReplyMarkup = MainMenu()
+
+	bot.Send(msg)
 }

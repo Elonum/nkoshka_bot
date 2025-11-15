@@ -1,8 +1,9 @@
+// models.go
 package main
 
 import "time"
 
-// NKOData — данные об организации из опроса
+// NKOData — данные об организации
 type NKOData struct {
 	Name        string
 	Description string
@@ -10,7 +11,7 @@ type NKOData struct {
 	Style       string
 }
 
-// UserState — состояние пользователя (FSM для опросов и ввода)
+// UserState — состояние пользователя
 type UserState struct {
 	ChatID    int64
 	State     string
@@ -19,7 +20,7 @@ type UserState struct {
 	UpdatedAt time.Time
 }
 
-// PostJSON — формат поста из бэкенда
+// PostJSON — формат поста от бэкенда
 type PostJSON struct {
 	PostID         string  `json:"post_id"`
 	PostAuthor     int64   `json:"post_author"`
@@ -28,7 +29,6 @@ type PostJSON struct {
 	Content        []Layer `json:"content"`
 }
 
-// Layer — слой для визуала (rectangle, image, text)
 type Layer struct {
 	LayerID    string                 `json:"layer_id"`
 	Type       string                 `json:"type"`

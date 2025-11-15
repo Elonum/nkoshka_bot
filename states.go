@@ -1,54 +1,59 @@
+// states.go
 package main
 
 import (
 	"log"
 	"sync"
-
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
+	"time"
 )
 
 var (
-	DB *gorm.DB
-	mu sync.Mutex
+	userStates = make(map[int64]*UserState)
+	mu         sync.Mutex
 )
 
-// InitDB — инициализация БД для состояний
-func InitDB() {
-	var err error
-	DB, err = gorm.Open(sqlite.Open("states.db"), &gorm.Config{})
-	if err != nil {
-		log.Panic(err)
-	}
-	DB.AutoMigrate(&UserState{})
-}
-
-// GetUserState — получить состояние по chatID (или создать новое)
+// GetUserState — получить или создать состояние
 func GetUserState(chatID int64) *UserState {
 	mu.Lock()
 	defer mu.Unlock()
 
-	state := &UserState{ChatID: chatID}
-	if err := DB.Where("chat_id = ?", chatID).First(state).Error; err != nil {
-		// Создаём новое, если не найдено
-		state.State = "idle"
-		state.TempData = make(map[string]string)
-		DB.Create(state)
+	if state, exists := userStates[chatID]; exists {
+		return state
 	}
+
+	// Создаём новое
+	state := &UserState{
+		ChatID:    chatID,
+		State:     "idle",
+		TempData:  make(map[string]string),
+		UpdatedAt: time.Now(),
+		NKO: NKOData{
+			Name:        "",
+			Description: "",
+			Activities:  "",
+			Style:       "",
+		},
+	}
+	userStates[chatID] = state
 	return state
 }
 
-// SaveUserState — сохранить состояние
+// SaveUserState — просто обновляем время (не нужно, но для единообразия)
 func SaveUserState(state *UserState) {
 	mu.Lock()
 	defer mu.Unlock()
-	DB.Save(state)
+	state.UpdatedAt = time.Now()
+	userStates[state.ChatID] = state
 }
 
-// ResetUserState — сброс в idle
+// ResetUserState — сброс в начальное
 func ResetUserState(chatID int64) {
-	state := GetUserState(chatID)
-	state.State = "idle"
-	state.TempData = make(map[string]string)
-	SaveUserState(state)
+	mu.Lock()
+	defer mu.Unlock()
+	delete(userStates, chatID)
+}
+
+// InitDB — теперь просто заглушка
+func InitDB() {
+	log.Println("In-memory state storage initialized (no SQLite)")
 }
