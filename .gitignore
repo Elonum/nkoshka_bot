@@ -1,17 +1,33 @@
-# Go
-bin/
-vendor/
+# Environment variables
+.env
+
+# NKO data (user data)
+nko_data.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+
+# Build files
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
 
-# Env
-.env
+# Test files
+*.test
 
-# Logs
-*.log
+# Output of the go coverage tool
+*.out
 
-# Temp
-tmp/
+# GoLand
+.idea/
+
+# VS Code
+.vscode/

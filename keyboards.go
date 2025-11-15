@@ -14,7 +14,7 @@ func MainMenu() tgbotapi.ReplyKeyboardMarkup {
 			tgbotapi.NewKeyboardButton("Контент-план"),
 		),
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("Настройки НКО"),
+			tgbotapi.NewKeyboardButton("Ввести данные НКО"),
 			tgbotapi.NewKeyboardButton("Помощь"),
 		),
 	)
@@ -24,21 +24,18 @@ func MainMenu() tgbotapi.ReplyKeyboardMarkup {
 func YesNoInline() tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Да, рассказать о НКО", "nko_yes"),
+			tgbotapi.NewInlineKeyboardButtonData("Ввести данные НКО", "nko_yes"),
 			tgbotapi.NewInlineKeyboardButtonData("Пропустить", "nko_skip"),
 		),
 	)
 }
 
-// TextModesInline — режимы для генерации текста (свободный, структурированный, по примеру)
+// TextModesInline — режимы для генерации текста (свободный, структурированный)
 func TextModesInline() tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Свободный текст", "text_free"),
 			tgbotapi.NewInlineKeyboardButtonData("Структурированная форма", "text_struct"),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("По примеру (как Ночлежка)", "text_example"),
 		),
 	)
 }
@@ -52,8 +49,53 @@ func StylesInline() tgbotapi.InlineKeyboardMarkup {
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Художественный", "style_artistic"),
+			tgbotapi.NewInlineKeyboardButtonData("Эмоциональный", "style_emotional"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Информационный", "style_informational"),
+			tgbotapi.NewInlineKeyboardButtonData("Призыв к действию", "style_call_to_action"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Благодарственный", "style_gratitude"),
+			tgbotapi.NewInlineKeyboardButtonData("Дружелюбный", "style_friendly"),
 		),
 	)
 }
 
-// ... Можно добавить больше, например, для контент-плана (период: неделя, месяц)
+// ContentPlanPeriodInline — выбор периода для контент-плана
+func ContentPlanPeriodInline() tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("7 дней", "plan_7"),
+			tgbotapi.NewInlineKeyboardButtonData("14 дней", "plan_14"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("30 дней", "plan_30"),
+			tgbotapi.NewInlineKeyboardButtonData("Свой вариант", "plan_custom"),
+		),
+	)
+}
+
+// ContentPlanFrequencyInline — выбор частоты публикаций для контент-плана
+func ContentPlanFrequencyInline() tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Ежедневно", "freq_daily"),
+			tgbotapi.NewInlineKeyboardButtonData("Через день", "freq_every_other"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("2 раза в неделю", "freq_twice_week"),
+			tgbotapi.NewInlineKeyboardButtonData("3 раза в неделю", "freq_thrice_week"),
+		),
+	)
+}
+
+// PostActionInline — действия с готовым постом
+func PostActionInline(postID string) tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔄 Перегенерировать", "post_regenerate_"+postID),
+			tgbotapi.NewInlineKeyboardButtonData("📤 Отправить", "post_send_"+postID),
+		),
+	)
+}
