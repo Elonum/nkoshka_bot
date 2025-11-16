@@ -17,9 +17,9 @@
 
 ## Исправление кода AI агента
 
-### Проблема в текущем коде
+### Ваш текущий код (правильный для /api/auth/init)
 
-Ваш текущий код:
+Ваш код уже правильный для endpoint `/api/auth/init`:
 ```python
 @app.post("/api/auth/init")
 async def init_user(data: InitUserRequest):
@@ -28,9 +28,11 @@ async def init_user(data: InitUserRequest):
     return {"status": "initialized", "tg_id": tg_id}
 ```
 
-**Проблема:** AI агент ожидает напрямую `InitUserRequest`, но бот отправляет обёрнутый формат с полями `endpoint`, `data`, `tg_id`, `timestamp`.
+**Это правильно!** Бот отправляет данные напрямую в формате `InitUserRequest` для `/api/auth/init`.
 
-### Правильная реализация
+### Для других endpoints нужна обёртка
+
+Для всех остальных endpoints (генерация текста, изображений и т.д.) бот отправляет обёрнутый формат:
 
 ```python
 from fastapi import FastAPI
@@ -40,7 +42,7 @@ import httpx
 
 app = FastAPI()
 
-# Модель для запроса от бота
+# Модель для запроса от бота (для endpoints кроме /api/auth/init)
 class BotRequest(BaseModel):
     endpoint: str
     data: dict
@@ -55,35 +57,25 @@ class InitUserRequest(BaseModel):
 # URL бэкенда (из переменных окружения)
 BACKEND_URL = "http://localhost:8080"  # или из env
 
+# /api/auth/init - прямой формат (ваш код уже правильный)
 @app.post("/api/auth/init")
-async def init_user(bot_request: BotRequest):
+async def init_user(data: InitUserRequest):
     """
     Обрабатывает запрос от бота для инициализации пользователя.
-    Бот отправляет: {"endpoint": "/api/auth/init", "data": {"tg_id": ..., "username": ...}, ...}
+    Бот отправляет: {"tg_id": 123456789, "username": "test_user"}
     """
-    # Извлекаем данные из поля data
-    user_data = bot_request.data
+    tg_id = data.tg_id
+    username = data.username
     
-    # Создаём запрос для бэкенда
-    backend_request = InitUserRequest(
-        tg_id=user_data.get("tg_id") or bot_request.tg_id,
-        username=user_data.get("username", "")
-    )
+    # Если нужно вызвать бэкенд:
+    # async with httpx.AsyncClient() as client:
+    #     response = await client.post(
+    #         f"{BACKEND_URL}/api/auth/init",
+    #         json={"tg_id": tg_id, "username": username}
+    #     )
+    #     response.raise_for_status()
     
-    # Вызываем бэкенд
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"{BACKEND_URL}/api/auth/init",
-            json=backend_request.dict()
-        )
-        response.raise_for_status()
-        backend_result = response.json()
-    
-    # Возвращаем результат боту
-    return {
-        "status": "initialized",
-        "tg_id": backend_request.tg_id
-    }
+    return {"status": "initialized", "tg_id": tg_id}
 
 @app.post("/local_bot/start")
 async def bot_start(bot_request: BotRequest):

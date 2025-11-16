@@ -80,22 +80,17 @@ func CallBackend(endpoint string, data map[string]interface{}, tgID int64) (Post
 }
 
 // InitUser — инициализация пользователя в бэкенде через AI агента
+// Отправляет данные напрямую в формате InitUserRequest (без обёртки)
 func InitUser(tgID int64, username string) error {
 	aiAgentURL := os.Getenv("AI_AGENT_URL")
 	if aiAgentURL == "" {
 		return fmt.Errorf("AI_AGENT_URL not set in .env")
 	}
 
-	data := map[string]interface{}{
+	// Формируем запрос в формате, который ожидает AI агент (прямой формат)
+	requestData := map[string]interface{}{
 		"tg_id":    tgID,
 		"username": username,
-	}
-
-	requestData := map[string]interface{}{
-		"endpoint":  "/api/auth/init",
-		"data":      data,
-		"tg_id":     tgID,
-		"timestamp": time.Now().Unix(),
 	}
 
 	body, err := json.Marshal(requestData)
@@ -104,6 +99,7 @@ func InitUser(tgID int64, username string) error {
 	}
 
 	log.Printf("[DEBUG] Initializing user: tg_id=%d, username=%s", tgID, username)
+	log.Printf("[DEBUG] Sending to AI agent (/api/auth/init): %s", string(body))
 
 	client := &http.Client{
 		Timeout: 10 * time.Second,
@@ -122,7 +118,13 @@ func InitUser(tgID int64, username string) error {
 		return fmt.Errorf("AI agent error: status %d, details: %s", resp.StatusCode, errorBody)
 	}
 
-	log.Printf("[DEBUG] User initialized successfully: tg_id=%d", tgID)
+	// Читаем ответ от AI агента
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		log.Printf("[WARN] Failed to decode response: %v", err)
+	}
+
+	log.Printf("[DEBUG] User initialized successfully: tg_id=%d, response: %v", tgID, result)
 	return nil
 }
 
@@ -263,28 +265,26 @@ func drawImage(dc *gg.Context, data map[string]interface{}) error {
 	x := getFloat(data, "x", 0)
 	y := getFloat(data, "y", 0)
 	scale := getFloat(data, "scale", 1.0)
-	opacity := getFloat(data, "opacity", 1.0)
+	// opacity := getFloat(data, "opacity", 1.0) // TODO: реализовать поддержку opacity
 
-	// Применяем opacity
-	dc.Push()
-	dc.SetAlpha(opacity)
-	
 	// Применяем масштаб и позицию
+	dc.Push()
+	
 	if scale != 1.0 {
-		// Сохраняем текущее состояние
-		dc.Push()
 		// Перемещаемся в позицию
 		dc.Translate(x, y)
 		// Масштабируем
 		dc.Scale(scale, scale)
 		// Рисуем изображение в начале координат (после трансформации)
 		dc.DrawImage(img, 0, 0)
-		dc.Pop()
 	} else {
 		dc.DrawImage(img, int(x), int(y))
 	}
 	
 	dc.Pop()
+	
+	// Примечание: opacity пока не поддерживается библиотекой gg напрямую
+	// Можно реализовать через наложение полупрозрачного слоя, но это сложнее
 
 	return nil
 }
@@ -298,7 +298,7 @@ func drawText(dc *gg.Context, data map[string]interface{}) {
 
 	x := getFloat(data, "x", 0)
 	y := getFloat(data, "y", 0)
-	fontSize := getFloat(data, "font_size", 48)
+	// fontSize := getFloat(data, "font_size", 48) // TODO: реализовать поддержку размера шрифта
 	colorStr := getString(data, "color", "#000000")
 	align := getString(data, "align", "left")
 
@@ -309,7 +309,8 @@ func drawText(dc *gg.Context, data map[string]interface{}) {
 	// Устанавливаем шрифт
 	face := basicfont.Face7x13
 	dc.SetFontFace(face)
-	dc.SetFontSize(fontSize)
+	// Примечание: basicfont имеет фиксированный размер, для изменения размера нужен другой подход
+	// Пока используем базовый шрифт, можно расширить позже с truetype
 
 	// Выравнивание
 	switch align {

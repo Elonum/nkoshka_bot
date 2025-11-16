@@ -14,8 +14,8 @@ func main() {
 	if err != nil {
 		// Пробуем абсолютный путь для GoLand
 		err = godotenv.Load("C:\\MainProjects\\nko_bot_frontend\\.env")
-	if err != nil {
-		log.Println("No .env file found")
+		if err != nil {
+			log.Println("No .env file found")
 		}
 	}
 
