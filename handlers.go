@@ -1,6 +1,8 @@
 package main // для теста, но в проекте — без main
 
 import (
+	"fmt"
+	"log"
 	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -52,7 +54,7 @@ func handleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 				"nko":       state.NKO,
 			}
 
-			post, err := CallBackend("/generate_image", data)
+			post, err := CallBackend("/generate_image", data, chatID)
 			if err != nil {
 				bot.Send(tgbotapi.NewMessage(chatID, "❌ Ошибка генерации изображения: "+err.Error()+"\n\nПопробуй ещё раз или измени описание."))
 			} else {
@@ -80,6 +82,28 @@ func handleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 	// Обычные команды/кнопки
 	switch text {
 	case "/start":
+		// Инициализируем пользователя в бэкенде при первом взаимодействии
+		username := ""
+		if message.From != nil {
+			if message.From.UserName != "" {
+				username = message.From.UserName
+			} else {
+				// Если username нет, используем имя и фамилию
+				if message.From.FirstName != "" {
+					username = message.From.FirstName
+					if message.From.LastName != "" {
+						username += " " + message.From.LastName
+					}
+				} else {
+					username = fmt.Sprintf("user_%d", chatID)
+				}
+			}
+			// Отправляем инициализацию пользователя (игнорируем ошибки, т.к. пользователь может быть уже инициализирован)
+			if err := InitUser(chatID, username); err != nil {
+				log.Printf("[WARN] Failed to initialize user %d: %v", chatID, err)
+			}
+		}
+
 		welcomeText := `👋 Добро пожаловать в NKOshka Bot!
 
 Я твой персональный SMM-менеджер для создания контента для НКО.
@@ -252,7 +276,7 @@ func processStateInput(state *UserState, input string, bot *tgbotapi.BotAPI) {
 			"desc": input,
 			"nko":  state.NKO,
 		}
-		post, err := CallBackend("/generate_image", data)
+		post, err := CallBackend("/generate_image", data, chatID)
 		if err != nil {
 			bot.Send(tgbotapi.NewMessage(chatID, "❌ Ошибка генерации изображения: "+err.Error()+"\n\nПопробуй ещё раз или измени описание."))
 		} else {
@@ -266,7 +290,7 @@ func processStateInput(state *UserState, input string, bot *tgbotapi.BotAPI) {
 		data := map[string]interface{}{
 			"text": input,
 		}
-		post, err := CallBackend("/edit_text", data)
+		post, err := CallBackend("/edit_text", data, chatID)
 		if err != nil {
 			bot.Send(tgbotapi.NewMessage(chatID, "❌ Ошибка редактирования текста: "+err.Error()+"\n\nПопробуй ещё раз."))
 		} else {
@@ -281,9 +305,9 @@ func processStateInput(state *UserState, input string, bot *tgbotapi.BotAPI) {
 			"prompt": prompt,
 			"nko":    state.NKO,
 		}
-		post, err := CallBackend("/generate_text", data)
+		post, err := CallBackend("/generate_text", data, chatID)
 		if err != nil {
-			bot.Send(tgbotapi.NewMessage(chatID, "❌ Ошибка генерации изображения: "+err.Error()+"\n\nПопробуй ещё раз или измени описание."))
+			bot.Send(tgbotapi.NewMessage(chatID, "❌ Ошибка генерации текста: "+err.Error()+"\n\nПопробуй ещё раз или измени запрос."))
 		} else {
 			SendPostToUser(chatID, post, bot)
 			msg := tgbotapi.NewMessage(chatID, "✨ Готово! Выбери действие с постом:")
@@ -339,9 +363,9 @@ func processStateInput(state *UserState, input string, bot *tgbotapi.BotAPI) {
 			"prompt": prompt,
 			"nko":    state.NKO,
 		}
-		post, err := CallBackend("/generate_text", data)
+		post, err := CallBackend("/generate_text", data, chatID)
 		if err != nil {
-			bot.Send(tgbotapi.NewMessage(chatID, "❌ Ошибка генерации изображения: "+err.Error()+"\n\nПопробуй ещё раз или измени описание."))
+			bot.Send(tgbotapi.NewMessage(chatID, "❌ Ошибка генерации текста: "+err.Error()+"\n\nПопробуй ещё раз или измени запрос."))
 		} else {
 			SendPostToUser(chatID, post, bot)
 			msg := tgbotapi.NewMessage(chatID, "✨ Готово! Выбери действие с постом:")
@@ -359,7 +383,7 @@ func processStateInput(state *UserState, input string, bot *tgbotapi.BotAPI) {
 			"post_id": postID,
 			"chat_id": chatTarget,
 		}
-		_, err := CallBackend("/send_post", data)
+		_, err := CallBackend("/send_post", data, chatID)
 		if err != nil {
 			bot.Send(tgbotapi.NewMessage(chatID, "❌ Ошибка отправки поста: "+err.Error()+"\n\nПроверь правильность chat_id или username."))
 		} else {
@@ -554,7 +578,7 @@ func handleCallback(callback *tgbotapi.CallbackQuery, bot *tgbotapi.BotAPI) {
 				"post_id":    postID,
 				"regenerate": true,
 			}
-			post, err := CallBackend("/regenerate_post", reqData)
+			post, err := CallBackend("/regenerate_post", reqData, chatID)
 			if err != nil {
 				bot.Send(tgbotapi.NewMessage(chatID, "❌ Ошибка перегенерации поста: "+err.Error()+"\n\nПопробуй ещё раз."))
 			} else {
@@ -578,7 +602,7 @@ func processContentPlan(chatID int64, days string, frequency string, state *User
 		"freq": frequency,
 		"nko":  state.NKO,
 	}
-	post, err := CallBackend("/content_plan", data)
+	post, err := CallBackend("/content_plan", data, chatID)
 	if err != nil {
 		bot.Send(tgbotapi.NewMessage(chatID, "❌ Ошибка создания контент-плана: "+err.Error()+"\n\nПопробуй ещё раз."))
 	} else {

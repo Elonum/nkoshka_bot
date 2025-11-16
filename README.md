@@ -91,12 +91,28 @@ AI агент должен возвращать `PostJSON`:
 ```json
 {
   "post_id": "uuid",
-  "post_author": 0,
+  "post_author": 123456789,
   "assigned_chat_id": [],
   "main_text": "Текст поста",
-  "content": [...]
+  "content": [
+    {
+      "layer_id": "uuid",
+      "type": "image",
+      "order_index": 0,
+      "data": {
+        "image_base64": "base64_encoded_image_string",
+        "x": 50,
+        "y": 100,
+        "scale": 1.0,
+        "rotation": 0,
+        "opacity": 1.0
+      }
+    }
+  ]
 }
 ```
+
+**Важно:** Изображения передаются в формате base64 в поле `image_base64` (не URL).
 
 ## Endpoints AI агента
 
